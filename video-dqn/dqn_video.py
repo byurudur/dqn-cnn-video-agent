@@ -2,7 +2,7 @@ import matplotlib
 import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
-matplotlib.use('TkAgg')
+matplotlib.use('TkAgg') # İnteraktifliği kapat
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Input
@@ -25,20 +25,24 @@ def build_model(input_shape, action_space):
     return model
 
 # DQN Ajanı tanımı
+# EPSİLON 0999 - 0990
 class DQNAgent:
     def __init__(self, input_shape, action_space):
         self.input_shape = input_shape
         self.action_space = action_space
-        self.memory = deque(maxlen=2000)
+        self.memory = deque(maxlen=5000)
         self.gamma = 0.99
         self.epsilon = 1.0
         self.epsilon_min = 0.1
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.99
         self.epsilon_decay_min = 0.01
         self.model = build_model(input_shape, action_space)
         self.target_model = build_model(input_shape, action_space)
         self.update_target_model()
-        self.success_threshold = 50
+
+
+        # Başarı barajı
+        self.success_threshold = 200
 
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
@@ -122,8 +126,8 @@ if __name__ == "__main__":
     input_shape = (84, 84, 12)
     action_space = 3  # Sol, sağ, ortala gibi eylemler
     agent = DQNAgent(input_shape, action_space)
-    episodes = 100
-    batch_size = 32
+    episodes = 100 # 100 Bölüm kare başına
+    batch_size = 32 # 32'lik grup
 
     rewards = []
 
@@ -138,12 +142,12 @@ if __name__ == "__main__":
         state = np.expand_dims(state, axis=0)
 
         total_reward = 0
-        bayrak = 0
+        bayrak = 0  # Bayrak sıfır for döngüsüne giriş
         for time in range(50):
 
             action = agent.act(state)
             ret, next_frame = cap.read()
-            bayrak = bayrak + 1
+            bayrak = bayrak + 1 # Hareket başına bayrak 1 artsın.
             print("bayrak = " + str(bayrak))
             if not ret:
                 break
@@ -185,6 +189,7 @@ if __name__ == "__main__":
     cap.release()
     cv2.destroyAllWindows()
 
+    # GRAFİK
     plt.plot(rewards)
     plt.xlabel('Episode')
     plt.ylabel('Total Reward')
