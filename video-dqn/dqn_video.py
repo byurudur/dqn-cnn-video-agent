@@ -42,7 +42,7 @@ class DQNAgent:
 
 
         # Başarı barajı
-        self.success_threshold = 200
+        self.success_threshold = 2000
 
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
         total_reward = 0
         bayrak = 0  # Bayrak sıfır for döngüsüne giriş
-        for time in range(50):
+        for time in range(200):
 
             action = agent.act(state)
             ret, next_frame = cap.read()
@@ -156,20 +156,54 @@ if __name__ == "__main__":
             next_state = np.expand_dims(next_state, axis=0)
 
             # Ödül/ceza sistemi
+
+            # Reward/Penalty system
             reward = 0
             done = False
 
-            # Ödül/ceza sistemini aksiyona göre düzenle
-            if action == 2:  # Ortalamak
-                reward = 1
-            elif action in [0, 1]:  # Sol veya sağ hareket
-                reward = 0.5
+            # Base rewards based on action
+            if action == 2:  # Centering
+                reward += 1  # Base reward for centering
 
-            # Ceza durumu: Eğer ajan ölürse
-            oyuncu_ölür = check_player_death(next_frame)
-            if oyuncu_ölür:
-                done = True
-                reward = -10  # Büyük ceza
+            if action in [0, 1]:  # Left or right movement
+                reward += 0.5  # Movement reward
+
+            # Check if player died
+            oyuncu_olur = check_player_death(next_frame)
+            if not oyuncu_olur:
+                # Reward for avoiding obstacles
+                reward += 2  # Additional reward for successfully avoiding an obstacle or enemy
+
+                # Extra reward for each new enemy joined to the team (dummy variable example)
+                new_enemy_joined_count = 1  # You may need to implement this logic based on your game environment
+                if new_enemy_joined_count > 0:
+                    reward += new_enemy_joined_count * 2  # Extra reward for each new enemy that joins the team
+
+            else:
+                # Penalty for collision or dying
+                reward -= 10  # Large penalty
+                done = True  # End episode if player dies
+
+            # Additional Penalty if the agent moves left or right and risks colliding with an obstacle
+            if action in [0, 1] and oyuncu_olur:
+                reward -= 1  # Small penalty
+
+            # Add further logic if needed for more specific scenarios, such as bonuses for covering a certain distance or penalties for unnecessary movements
+
+            # reward = 0
+            # done = False
+            #
+            # # Ödül/ceza sistemini aksiyona göre düzenle
+            # if action == 2:  # Ortalamak
+            #     reward = 1
+            # elif action in [0, 1]:  # Sol veya sağ hareket
+            #     reward = 0.5
+            #
+            # # Ceza durumu: Eğer ajan ölürse
+            # oyuncu_ölür = check_player_death(next_frame)
+            # if oyuncu_ölür:
+            #     done = True
+            #     reward = -10  # Büyük ceza
 
             total_reward += reward
             print(reward)
